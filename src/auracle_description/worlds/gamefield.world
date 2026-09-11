@@ -1,33 +1,42 @@
 <?xml version="1.0" ?>
 <sdf version="1.9">
-  <world name="gamefield">
-    <physics name="1ms" type="ignored">
+  <world name="gamefield_world">
+
+    <physics name="default_physics" type="dart">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
     </physics>
 
+    <!-- Core Gazebo Harmonic system plugins -->
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+
+    <!-- ROS 2 Jazzy clock bridge so /clock is available for ros_gz_bridge nodes -->
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
-    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
 
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
       <pose>0 0 10 0 0 0</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
       <specular>0.2 0.2 0.2 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <constant>0.9</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
 
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <gravity>0 0 -9.8</gravity>
+
+    <!-- Ground plane sits below the field as a safety net; the field's own
+         floor (part of the STL) provides the actual driving surface. -->
     <model name="ground_plane">
       <static>true</static>
       <link name="link">
@@ -41,8 +50,8 @@
           <surface>
             <friction>
               <ode>
-                <mu>0.9</mu>
-                <mu2>0.9</mu2>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
               </ode>
             </friction>
           </surface>
@@ -55,22 +64,20 @@
             </plane>
           </geometry>
           <material>
-            <ambient>0.6 0.6 0.6 1</ambient>
-            <diffuse>0.6 0.6 0.6 1</diffuse>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
           </material>
         </visual>
       </link>
     </model>
 
-    <!-- The competition-field mesh already shipped in
-         auracle_description/models/gamefield - include it here so
-         launch_sim.launch.py's world matches what GZ_SIM_RESOURCE_PATH
-         points at. -->
+    <!-- The game field itself.
+         Requires GZ_SIM_RESOURCE_PATH to include the parent of the
+         "gamefield" model folder (see notes below). -->
     <include>
       <uri>model://gamefield</uri>
       <name>gamefield</name>
-      <pose>0 0 0 0 0 0</pose>
-      <static>true</static>
+      <pose>0 0 0.001 0 0 0</pose>
     </include>
 
   </world>
