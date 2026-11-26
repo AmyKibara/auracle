@@ -8,12 +8,12 @@ This repository contains code for Auracle, an autonomous waste-sorting robot bui
 - YOLO (ONNX) waste detector and a BehaviorTree.CPP mission runner
 
 ## Team
-| Name | Course of study | Email
-|---|---|
-| Fredrick Wanjeri | B.sc Mechatronic Engineering | wanjerifredrick@gmail.com |
-| Emmanuel Mututa | B.sc Mechatronic Engineering | emmanuaelmututa25@gmail.com
-| Amy Kibara | B.sc Mechatronic Engineering | amy.kibara@gmail.com |
-| Jacque Kyalo | B.sc Electrical & Electronic Engineering | jacquekyalo367@gmail.com |
+| Name | Course of study | Email |
+|---|---|---|
+| Fredrick Wanjeri | B.Sc Mechatronic Engineering | wanjerifredrick@gmail.com |
+| Emmanuel Mututa | B.Sc Mechatronic Engineering | emmanuaelmututa25@gmail.com |
+| Amy Kibara | B.Sc Mechatronic Engineering | amy.kibara@gmail.com |
+| Jacque Kyalo | B.Sc Electrical & Electronic Engineering | jacquekyalo367@gmail.com |
 
 
 ## Hardware
@@ -42,9 +42,8 @@ The IMU uses bit-banged I2C because the Nano's A5 (hardware SCL) is damaged, so 
 ## Repository layout
 ```
 firmware/auracle_firmware/   Arduino Nano firmware (PlatformIO / arduino-cli)
-pc/connect_pi.sh             Sets the Zenoh/ROS env on the PC and points it at the Pi's router
-pc/sync_time.sh              Syncs the PC and Pi clocks (chrony)
-pc/debug_time.sh             Checks that the clock sync is healthy
+network_files/pc/            PC scripts: connect_pi.sh (Zenoh/ROS env), sync_time.sh (clock sync), debug_time.sh (sync check)
+network_files/pi/            zenoh-router.service (starts the Zenoh router on the Pi)
 src/
   auracle_description/       URDF/xacro, Gazebo world and gamefield model
   auracle_hardware/          ros2_control hardware plugin (talks to the Nano over serial)
@@ -57,7 +56,7 @@ src/
 ## Networking and time
 ROS 2 uses **rmw_zenoh** with a Zenoh router running on the Pi as a systemd service. All machines must share the same `ROS_DOMAIN_ID` (89 in this repo). Clocks are synced with **chrony**, with the PC as the time server, which keeps TF and sensor fusion consistent without internet.
  
-Three scripts in `pc/` handle this. `connect_pi.sh` finds the Pi, sets `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID` and `ZENOH_CONFIG_OVERRIDE`. `sync_time.sh` starts chrony on the PC and snaps both clocks. `debug_time.sh` reports whether the sync is healthy. All three find the Pi at `auracle.local`, or take its IP as the first argument. `connect_pi.sh` and `sync_time.sh` must be **sourced**, not executed, so the variables stay in your shell, while `debug_time.sh` is run normally.
+Three scripts in `network_files/pc/` handle this. `connect_pi.sh` finds the Pi, sets `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID` and `ZENOH_CONFIG_OVERRIDE`. `sync_time.sh` starts chrony on the PC and snaps both clocks. `debug_time.sh` reports whether the sync is healthy. All three find the Pi at `auracle.local`, or take its IP as the first argument. `connect_pi.sh` and `sync_time.sh` must be **sourced**, not executed, so the variables stay in your shell, while `debug_time.sh` is run normally.
 
 ## Firmware
 The Nano runs a 40 Hz control loop (25 ms period): per-wheel PI control with feedforward, soft start and kick, stall/fault detection, encoder interrupts and a raw-register MPU6050 driver over software I2C. It talks to the Pi over a plain ASCII serial protocol at 500000 baud (`v L R` commands, `e ...` telemetry, `F ...` faults). On the Pi side, `auracle_hardware` exposes it to `ros2_control` as a diff-drive base plus an IMU. Commands double as a 500 ms watchdog heartbeat.
@@ -67,8 +66,7 @@ The Nano runs a 40 Hz control loop (25 ms period): per-wheel PI control with fee
 - **Odometry:** EKF fuses wheel odometry, rf2o lidar odometry and the IMU.
 - **Teleop:** keyboard (`key_drive.py` or `teleop_twist_keyboard`) or a gamepad via a UDP bridge (`joy_udp_node.py`, `joy_drive.py`).
 - **Mapping:** `slam_toolbox` online async, fed by a box-filtered scan (`scan_filtered`) that removes the robot's own body.
-- **Navigation:** Nav2 with NavFn, Regulated Pure
-Pursuit and AMCL on a saved map.
+- **Navigation:** Nav2 with NavFn, Regulated Pure Pursuit and AMCL on a saved map.
 
 ## Computer Vision
 `auracle_vision` runs a YOLO model exported to ONNX (default `waste_yolo26n_320.onnx`, 320 px input) at 5 Hz, only while the behavior tree asks for a detection. A rolling vote (6 of the last 10 frames, mean score >= 0.35) produces one decision on `/auracle/vision/decision`. Tools in `tools/` resize/quantize models and simulate screen-photographed input.
@@ -105,7 +103,12 @@ sudo udevadm control --reload-rules && sudo udevadm trigger   # creates /dev/ard
 ```
 
 **Connection steps**
-1. Create the `zenoh-router.service` on the Pi so `rmw_zenohd` starts on boot with `ROS_DOMAIN_ID=89` and `RMW_IMPLEMENTATION=rmw_zenoh_cpp`.
+1. Install the Zenoh router service on the Pi (edit `User=` in the file if your username isn't `auracle`):
+   ```bash
+   sudo cp network_files/pi/zenoh-router.service /etc/systemd/system/
+   sudo systemctl daemon-reload && sudo systemctl enable --now zenoh-router.service
+   systemctl status zenoh-router.service   # should be active
+   ```
 2. Add `export RMW_IMPLEMENTATION=rmw_zenoh_cpp` and `export ROS_DOMAIN_ID=89` to the Pi's `~/.bashrc`.
 3. On the Pi, point chrony at the PC only (disable the default NTP pools and add `sourcedir /etc/chrony/sources.d`). `sync_time.sh` writes the PC address into that folder.
 4. On the PC, add `allow all` and `local stratum 10` to `/etc/chrony/chrony.conf`. If you use WSL2, enable `networkingMode=mirrored` in `.wslconfig` and open UDP 123 in the Windows firewall.
@@ -121,19 +124,22 @@ colcon build --symlink-install
  
 ```bash
 arduino-cli compile -b arduino:avr:nano:cpu=atmega328 --output-dir build firmware/auracle_firmware/auracle_firmware
+arduino-cli upload  -b arduino:avr:nano:cpu=atmega328 -p /dev/arduino --input-dir build
 ```
+
+If the upload fails with a sync error, your Nano has the old bootloader: use `cpu=atmega328old` in both commands.
 
 ## Running the robot
  
 Every PC terminal needs the environment first, and the clocks must be synced once per session:
  
 ```bash
-source install/setup.bash && source pc/connect_pi.sh
-source pc/sync_time.sh      # once per session
-pc/debug_time.sh            # optional: confirm the sync
+source install/setup.bash && source network_files/pc/connect_pi.sh
+source network_files/pc/sync_time.sh      # once per session
+network_files/pc/debug_time.sh            # optional: confirm the sync
 ```
  
-If `auracle.local` does not resolve (common from WSL), pass the Pi's IP, for example `source pc/connect_pi.sh 192.168.1.50`.
+If `auracle.local` does not resolve (common from WSL), pass the Pi's IP, for example `source network_files/pc/connect_pi.sh 192.168.1.50`.
  
 **1. Start the robot (Pi)**
  
@@ -165,8 +171,6 @@ ros2 launch auracle_bringup slam_mapping.launch.py namespace:=auracle use_slam:=
 ros2 run nav2_map_server map_saver_cli -f ~/maps/arena --ros-args -r map:=/auracle/map
 ```
  
-If the map contains fake walls (for example inside the start chamber), clean it with `ros2 run auracle_bringup map_edit.py --help`.
- 
 **4. Navigate** (stop teleop and SLAM first, since teleop overrides Nav2)
  
 ```bash
@@ -177,6 +181,8 @@ ros2 launch auracle_bringup localization_nav_rviz.launch.py namespace:=auracle u
 ```
  
 In RViz, set the robot's pose with **2D Pose Estimate**, then send a **2D Goal Pose**.
+ 
+This launch file runs Nav2's collision monitor by default, which hard-stops the robot on the live lidar scan. Add `use_collision_monitor:=false` to the Pi command to turn it off.
  
 **5. Run the mission**
  
@@ -191,17 +197,43 @@ ros2 launch auracle_bt mission_rviz.launch.py
  
 With the **Publish Point** tool, click the centres of LOAD 1, 2, 3 and then OFFLOAD 1, 2, 3. The runner saves the file and exits.
  
-Then run, choosing the first region with `route:=N` (later regions are sent on the `/auracle/region` topic):
+Set the start pose once per map. Park the robot where mapping began and launch with a manual pose click:
  
 ```bash
-ros2 launch auracle_bt mission.launch.py map:=$HOME/maps/arena.yaml route_file:=$HOME/maps/arena_regions.yaml route:=1
+# Pi
+ros2 launch auracle_bt mission.launch.py map:=$HOME/maps/arena.yaml route_file:=$HOME/maps/arena_regions.yaml auto_pose:=false use_collision_monitor:=true
+# PC
+ros2 launch auracle_bt mission_rviz.launch.py
+```
+ 
+In RViz, click **2D Pose Estimate** at the robot's real position and drag along its heading. Then read where AMCL puts it:
+ 
+```bash
+ros2 topic echo /auracle/amcl_pose --once
+```
+ 
+Note `position.x`, `position.y` and `yaw = 2 * atan2(orientation.z, orientation.w)`, and write them into `start` and `home` in `arena_regions.yaml`:
+ 
+```yaml
+start: {x: <x>, y: <y>, yaw: <yaw>}
+home:
+  - {x: <x>, y: <y>, yaw: <yaw>}
+```
+ 
+Run the mission, choosing the first region with `route:=N` (later regions are sent on the `/auracle/region` topic):
+ 
+```bash
+ros2 launch auracle_bt mission.launch.py map:=$HOME/maps/arena.yaml route_file:=$HOME/maps/arena_regions.yaml route:=1 use_collision_monitor:=true
+ros2 topic pub --once /auracle/region std_msgs/msg/Int32 "{data: 2}"   # next region, from another terminal
 ```
  
 Let the camera choose the region instead:
  
 ```bash
-ros2 launch auracle_bt mission.launch.py map:=$HOME/maps/arena.yaml route_file:=$HOME/maps/arena_regions.yaml vision:=true
+ros2 launch auracle_bt mission.launch.py map:=$HOME/maps/arena.yaml route_file:=$HOME/maps/arena_regions.yaml vision:=true use_collision_monitor:=true
 ```
+ 
+`use_collision_monitor` is **off by default in `mission.launch.py`**. The commands above turn it on (Nav2 then publishes to `cmd_vel_nav_raw` and the monitor forwards to `cmd_vel_nav`). Leave the flag out to let Nav2 drive `twist_mux` directly.
  
 Bench-test the detector alone:
  
@@ -215,12 +247,14 @@ ros2 topic echo /auracle/vision/decision
 ```bash
 ros2 launch auracle_bringup launch_sim.launch.py
 ```
-The same commands for teleop, SLAM and navigation apply for the simulation.  
+The same commands for teleop, SLAM and navigation apply for the simulation.
+
 ## Known limitations
  
 - The rear-right motor is weak going forward, which caps the whole robot at about 0.16 m/s until it is replaced.
 - The waste classifier is only about 50 % accurate on clean test photos and about 31-35 % per frame on simulated screen photos. Fine-tune it on frames captured from the real screen (`save_dir:=...` on the detector) before relying on it.
 - Left turns are the weakest manoeuvre (weak left-front motor).
+
 ## Credits and licenses
  
 `rf2o_laser_odometry` is third-party code and keeps its own license. The rest of the repository is released under the license in `LICENSE`.

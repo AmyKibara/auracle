@@ -1,6 +1,6 @@
 """waste_detector: camera frames in, ONE waste class out, only when the behaviour tree asks.
 
-Talks to auracle_bt_1 (bt_runner, node WaitForDetection) over two topics, relative to the namespace:
+Talks to auracle_bt (bt_runner, node WaitForDetection) over two topics, relative to the namespace:
   vision/enable    std_msgs/Bool    in   true = "I'm waiting for a class", false = "got it, stop"
   vision/decision  std_msgs/String  out  "metal" | "organic" | "plastic", published once per vote win
 Debug / tuning:
