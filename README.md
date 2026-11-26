@@ -8,7 +8,7 @@ This repository contains code for Auracle, an autonomous waste-sorting robot bui
 - YOLO (ONNX) waste detector and a BehaviorTree.CPP mission runner
 
 ## Team
-| Name | Course of study | Email
+| Name | Course of study | Email |
 |---|---|
 | Fredrick Wanjeri | B.sc Mechatronic Engineering | wanjerifredrick@gmail.com |
 | Emmanuel Mututa | B.sc Mechatronic Engineering | emmanuaelmututa25@gmail.com
