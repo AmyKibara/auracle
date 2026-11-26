@@ -257,4 +257,4 @@ The same commands for teleop, SLAM and navigation apply for the simulation.
 
 ## Credits and licenses
  
-`rf2o_laser_odometry` is third-party code and keeps its own license. The rest of the repository is released under the license in `LICENSE`.
+The Auracle packages (`auracle_bringup`, `auracle_bt`, `auracle_description`, `auracle_hardware`, `auracle_vision`) and the firmware are released under the Apache License 2.0. `rf2o_laser_odometry` is third-party code by its original authors and remains under its own license (GPLv3, see `src/rf2o_laser_odometry/LICENSE`).
