@@ -9,11 +9,11 @@ This repository contains code for Auracle, an autonomous waste-sorting robot bui
 
 ## Team
 | Name | Course of study | Email |
-|---|---|
-| Fredrick Wanjeri | B.sc Mechatronic Engineering | wanjerifredrick@gmail.com |
-| Emmanuel Mututa | B.sc Mechatronic Engineering | emmanuaelmututa25@gmail.com
-| Amy Kibara | B.sc Mechatronic Engineering | amy.kibara@gmail.com |
-| Jacque Kyalo | B.sc Electrical & Electronic Engineering | jacquekyalo367@gmail.com |
+|---|---|---|
+| Fredrick Wanjeri | B.Sc Mechatronic Engineering | wanjerifredrick@gmail.com |
+| Emmanuel Mututa | B.Sc Mechatronic Engineering | emmanuaelmututa25@gmail.com
+| Amy Kibara | B.Sc Mechatronic Engineering | amy.kibara@gmail.com |
+| Jacque Kyalo | B.Sc Electrical & Electronic Engineering | jacquekyalo367@gmail.com |
 
 
 ## Hardware
