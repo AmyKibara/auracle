@@ -2,4 +2,7 @@ build/
 .vscode/
 log/
 install/
-src/auracle_vision/auracle_vision/__pycache__
+
+__pycache__/
+*.pyc
+.pio/

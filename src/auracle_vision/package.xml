@@ -4,7 +4,7 @@
   <name>auracle_vision</name>
   <version>0.0.0</version>
   <description>Computer vision related files</description>
-  <maintainer email="amy.kibara@gmail.com">Amy Kibara</maintainer>
+  <maintainer email="amy.kibara@gmail.com">AmyKibara</maintainer>
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>

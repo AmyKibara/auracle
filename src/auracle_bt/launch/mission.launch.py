@@ -13,7 +13,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 def generate_launch_description():
     """Mission on the Pi, AFTER launch_robot.launch.py. Park the robot at the mapping start, then:
 
-        ros2 launch auracle_bt_1 mission.launch.py map:=<map.yaml> route:=N
+        ros2 launch auracle_bt mission.launch.py map:=<map.yaml> route:=N
 
     Starts Nav2 + AMCL on the map (start_nav:=true) and the mission runner. The runner waits for
     Nav2, sets the start pose (0,0,0) itself, drives to load region N, pauses, drives to offload
@@ -56,7 +56,7 @@ def generate_launch_description():
     )
 
     runner = Node(
-        package='auracle_bt_1',
+        package='auracle_bt',
         executable='bt_runner',
         name='bt_runner',
         namespace=ns,
@@ -91,7 +91,7 @@ def generate_launch_description():
         DeclareLaunchArgument('namespace', default_value='auracle'),
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('route_file', default_value='',
-                              description='empty = share/auracle_bt_1/config/regions.yaml'),
+                              description='empty = share/auracle_bt/config/regions.yaml'),
         DeclareLaunchArgument('tree_file', default_value='',
                               description='empty = region_tree.xml (or mark_tree.xml when mark:=true). Name or full path'),
         nav,

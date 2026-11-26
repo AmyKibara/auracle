@@ -1,4 +1,4 @@
-// auracle_bt_1 mission runner.
+// auracle_bt mission runner.
 //
 // Sits above Nav2: it sends goals to the NavigateThroughPoses action, it does not drive.
 // Default tree (behavior_trees/region_tree.xml): wait for Nav2 -> set the start pose from `start` in
@@ -15,7 +15,6 @@
 //   vision_tree.xml  same loop as region_tree, but the region comes from the camera (vision:=true):
 //                    WaitForDetection asks auracle_vision for a waste class and maps it to a region
 //   vision_click_tree.xml  vision_tree with a 2D Pose Estimate click (vision:=true auto_pose:=false)
-//   sorting_tree.xml old vision-driven tree (lives in src/auracle_bt, not installed here: pass its full path)
 //
 // Run with the same namespace as Nav2 (launch/mission.launch.py, namespace:=auracle), so the
 // relative names below become /auracle/navigate_to_pose, /auracle/initialpose, /auracle/mission_goal.
@@ -685,7 +684,7 @@ int main(int argc, char ** argv) {
 
   std::string tree_file = node->get_parameter("tree_file").as_string();
   std::string route_file = node->get_parameter("route_file").as_string();
-  const std::string share = share_dir("auracle_bt_1");
+  const std::string share = share_dir("auracle_bt");
   const bool mark = node->get_parameter("mark").as_bool();
   const bool auto_pose = node->get_parameter("auto_pose").as_bool();
   if (tree_file.empty()) {

@@ -14,9 +14,6 @@ install(PROGRAMS
   scripts/joy_drive.py
   scripts/key_drive.py
   scripts/joy_udp_node.py
-  scripts/dojo_map.py
-  scripts/dojo_rviz_stream.py
-  scripts/map_edit.py
   scripts/odom_cov_relay.py
   DESTINATION lib/${PROJECT_NAME}
 )

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(auracle_bt_1)
+project(auracle_bt)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)

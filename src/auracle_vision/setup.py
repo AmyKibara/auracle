@@ -17,7 +17,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Amy Kibara',
+    maintainer='AmyKibara',
     maintainer_email='amy.kibara@gmail.com',
     description='Computer vision related files',
     license='Apache-2.0',
